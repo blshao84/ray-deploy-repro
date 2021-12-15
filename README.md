@@ -1,7 +1,7 @@
 This is to reproduce the issue discussed here: https://discuss.ray.io/t/modulenotfounderror-during-deployment-after-upgrade-to-1-9-0/4376/3
 
 python version:3.8
-ray version: 3.9
+ray version: 1.9
 
 Here's step:
 ```shell
