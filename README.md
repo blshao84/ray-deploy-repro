@@ -1,44 +1,51 @@
 This is to reproduce the issue discussed here: https://discuss.ray.io/t/modulenotfounderror-during-deployment-after-upgrade-to-1-9-0/4376/3
 
-python version:3.8
-ray version: 1.9
+A similar situation happened when we try to deploy an API from unit tests. This branch reproduces this error. 
 
-Here's step:
+Steps to reproduce (better prepare a virtual environment before run below scripts:
 ```shell
-git clone https://github.com/blshao84/ray-deploy-repro.git
-ray start --head
-serve start
-cd ray-deploy-repro
-python deploy.py
+git clone https://github.com/blshao84/ray-deploy-repro
+git checkout origin/tests_dir
+make dev
+make tests
 ```
-After running deploy.py, expecting below error logs:
+"make tests" is supposed to fail due to below error:
 ```
-2021-12-13 18:12:29,437 INFO worker.py:842 -- Connecting to existing Ray cluster at address: 127.0.0.1:6379
-2021-12-13 18:12:29,587 INFO api.py:242 -- Updating deployment 'Api'. component=serve deployment=Api
-Traceback (most recent call last):
-  File "deploy.py", line 11, in <module>
-    Api.deploy()
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/site-packages/ray/serve/api.py", line 789, in deploy
-    return _get_global_client().deploy(
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/site-packages/ray/serve/api.py", line 93, in check
-    return f(self, *args, **kwargs)
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/site-packages/ray/serve/api.py", line 248, in deploy
-    self._wait_for_goal(goal_id)
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/site-packages/ray/serve/api.py", line 184, in _wait_for_goal
-    raise async_goal_exception
-RuntimeError: Deployment 'Api' failed, deleting it asynchronously.
-(smoketest) ➜  ray-deploy-repro git:(main) ✗ 
-```
-when we looked at ray's log, we can find:
-```
-2021-12-13 18:12:33,052 ERROR worker.py:431 -- Exception raised in creation task: The actor died because of an error raised in its creation task, ray::SERVE_REPLICA::Api#qNWYOu:RayServeWrappedReplica.__init__ (pid=94370, ip=127.0.0.1)
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/concurrent/futures/_base.py", line 432, in result
-    return self.__get_result()
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/concurrent/futures/_base.py", line 388, in __get_result
-    raise self._exception
-  File "/Users/baolins/.conda/envs/smoketest/lib/python3.8/site-packages/ray/serve/replica.py", line 48, in __init__
-    deployment_def = cloudpickle.loads(serialized_deployment_def)
-ModuleNotFoundError: No module named 'foo'
-:actor_name:Api
+collected 0 items / 1 error                                                                                                                                                                              
+
+================================================================================================= ERRORS =================================================================================================
+____________________________________________________________________________ ERROR collecting deploytest/tests/test_deploy.py ____________________________________________________________________________
+ImportError while importing test module '/Users/baolins/Documents/tongyu/ray-deploy-repro/deploytest/tests/test_deploy.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../../opt/anaconda3/envs/ray-deploy-repro/lib/python3.8/site-packages/_pytest/python.py:578: in _importtestmodule
+    mod = import_path(self.fspath, mode=importmode)
+../../../opt/anaconda3/envs/ray-deploy-repro/lib/python3.8/site-packages/_pytest/pathlib.py:524: in import_path
+    importlib.import_module(module_name)
+../../../opt/anaconda3/envs/ray-deploy-repro/lib/python3.8/importlib/__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1014: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:991: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:975: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:671: in _load_unlocked
+    ???
+../../../opt/anaconda3/envs/ray-deploy-repro/lib/python3.8/site-packages/_pytest/assertion/rewrite.py:170: in exec_module
+    exec(co, module.__dict__)
+deploytest/tests/test_deploy.py:3: in <module>
+    from foo import Api
+E   ModuleNotFoundError: No module named 'foo'
+--------------------------------------------------------- generated xml file: /Users/baolins/Documents/tongyu/ray-deploy-repro/python_junit.xml ----------------------------------------------------------
+
+---------- coverage: platform darwin, python 3.8.12-final-0 ----------
+Coverage XML written to file coverage.xml
+
+======================================================================================== short test summary info =========================================================================================
+ERROR deploytest/tests/test_deploy.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================================================================================ 1 error in 1.28s ============================================================================================
+make: *** [tests] Error 2
 
 ```

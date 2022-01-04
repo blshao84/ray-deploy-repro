@@ -3,7 +3,7 @@ from ray import serve
 from starlette.requests import Request
 from starlette.responses import Response
 
-from foo.bar.foobar import foobar
+from deploytest.foo.bar.foobar import foobar
 
 serve_app = FastAPI()
 

@@ -1,6 +1,6 @@
 import ray
 
-from foo.api import Api
+from deploytest.foo import Api
 
 ray.init(
     address='localhost:6379',
